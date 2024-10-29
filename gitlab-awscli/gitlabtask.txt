@@ -1,0 +1,13 @@
+baseline infrastructre
+.......................
+1.create a load balancer - Parametrized
+2.target group - name should be enterd by IT ops engineer based on sepcifications
+3.create an ECR
+4.Create ECS,task ,service and service should host couple of EC2 instances . when itops engineer create service it should ask two parameters cluster name and task name.
+
+
+todays task
+.............
+
+Create AWS VPC and Subnet using Gitlab script : Script should be parametrized.
+	

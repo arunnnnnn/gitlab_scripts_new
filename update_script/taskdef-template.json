@@ -1,0 +1,44 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "MyTaskDefinition": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Name": "Container_Name",
+            "Image": "Image_Name",
+            "Memory": "Container_Memory",
+            "Environment": [
+              {
+                "Name": "name1",
+                "Value": "value1"
+              },
+              {
+                "Name": "name2",
+                "Value": "value2"
+              },
+              {
+                "Name": "name3",
+                "Value": "value3"
+              }
+            ],
+            "PortMappings": [
+              {
+                "ContainerPort": "Container_Port",
+                "HostPort": "Host_Port"
+              }
+            ]
+          }
+        ],
+        "taskRoleArn":"arn:aws:iam::AccountNo:role/tskrolarn",
+        "requiresCompatibilities":["EC2"],
+        "cpu":"256",
+        "memory":"512",
+        "Family": "Family_Name",
+        "ExecutionRoleArn": "arn:aws:iam::AccountNo:role/tskexerol"
+      }
+    }
+  }
+}
+

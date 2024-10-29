@@ -1,0 +1,9 @@
+﻿serviceName,seventeenrc1
+Cluster,arun123
+Desired_Count,1
+Launch_Type,EC2
+TaskDefinition,seventeenrc1
+MaximumPercent,200
+MinimumPercent,100
+Scheduling_Strategy,REPLICA
+Status,create

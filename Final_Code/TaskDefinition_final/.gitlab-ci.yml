@@ -1,0 +1,146 @@
+#CI Stages to create TaskDefinition in ECS cluster
+variables:
+   UserInput: "taskdef.csv"
+   UserInputENV: "env.csv"
+   
+stages:
+    - Purpose
+    - TD_CF_template
+    - CloudFormation_TD
+#Stage1
+Stack condition:
+  stage: Purpose
+  before_script:
+    - TODO=$(grep Status $UserInput | cut -d\, -f2)
+  script:
+    - echo "TODOIT=${TODO}" >> build.env
+    - cat build.env
+    - echo $TODOIT
+
+#Export json to other stages
+  artifacts:
+    expire_in: 1 days
+#Export VarVal to other stages
+    reports:
+      dotenv: build.env
+#Perform on
+  only:
+    - main 
+    - dev
+    - sit
+
+Create_JSON:
+  stage: TD_CF_template
+  before_script:
+    - echo "Repo contents"
+    - ls
+  script:   
+#Collecting input
+    - CNAME=$(grep Container_Name $UserInput | cut -d\, -f2)
+    - IMNAME=$(grep Image_Name $UserInput | cut -d\, -f2)
+    - CMEM=$(grep Memory $UserInput | cut -d\, -f2)
+    - CPORT=$(grep Container_Port $UserInput | cut -d\, -f2)
+    - HPORT=$(grep Host_Port $UserInput | cut -d\, -f2)
+    - FAM=$(grep Family_Name $UserInput | cut -d\, -f2)
+    - ACCNT=$(grep AccountNo $UserInput | cut -d\, -f2)
+    - TCPU=$(grep TaskCPU $UserInput | cut -d\, -f2)
+    - TMEM=$(grep TaskMEM $UserInput | cut -d\, -f2)
+    - COMPA=$(grep Compatibility $UserInput | cut -d\, -f2)
+    - TASKROLE=$(grep TaskRoleArn $UserInput | cut -d\, -f2)
+    - TASKEXEROLE=$(grep Task_Execution_Role $UserInput | cut -d\, -f2)
+    - echo "CNAME, $CNAME, IMNAME, $IMNAME, CMEM, $CMEM, CPORT, $CPORT, HPORT, $HPORT, FAM, $FAM, ACCNT, $ACCNT, TCPU, $TCPU, TMEM, $TMEM, COMPA, $COMPA, $TASKROLE, $TASKEXEROLE"
+#Export VarVal to other stages
+    - echo "TODOIT=${TODOIT}" >> build.env
+    - echo "STACKNAME=${FAM}" >> build.env
+    - cat build.env
+    - echo $STACKNAME
+#1.Read no of file 2.
+    - |
+      LINBER=$(wc -l < $UserInputENV)
+      echo $LINBER items
+      while read -r line
+        do
+          ENVNAME=$(echo "$line"| cut -d\, -f1)
+          ENVVAL=$(echo "$line"| cut -d\, -f2)
+          echo --
+          echo $ENVNAME
+          echo $ENVVAL
+          sed -i  "s|name$LINBER|$ENVNAME|g" taskdef-template.json
+          sed -i  "s|value$LINBER|$ENVVAL|g" taskdef-template.json
+          export LINBER=$(expr $LINBER - 1)
+        done < $UserInputENV
+#Replacing the template with user provided values
+    - sed -i "s|Container_Name|$CNAME|g" taskdef-template.json
+    - sed -i "s|Image_Name|$IMNAME|g" taskdef-template.json
+    - sed -i "s|Container_Memory|$CMEM|g" taskdef-template.json
+    - sed -i "s|Container_Port|$CPORT|g" taskdef-template.json
+    - sed -i "s|Host_Port|$HPORT|g" taskdef-template.json
+    - sed -i "s|Family_Name|$FAM|g" taskdef-template.json
+    - sed -i "s|AccountNo|$ACCNT|g" taskdef-template.json
+    - sed -i "s|tskrolarn|$TASKROLE|g" taskdef-template.json
+    - sed -i "s|tskexerol|$TASKEXEROLE|g" taskdef-template.json
+    - sed -i "s|TaskCPU|$TCPU|g" taskdef-template.json
+    - sed -i "s|TaskMEM|$TMEM|g" taskdef-template.json
+    - sed -i "s|PLATE|$COMPA|g" taskdef-template.json
+#Verifying output and artifact storage
+    - cp taskdef-template.json output/${FAM}-taskdef.json
+    - cat output/${FAM}-taskdef.json
+  after_script:
+    - ls output/
+#Export json to other stages
+  artifacts:
+    expire_in: 1 days
+    paths:
+    - output/*
+#Export VarVal to other stages
+    reports:
+      dotenv: build.env
+#Perform on
+  only:
+    - main 
+    - dev
+    - sit
+
+Deploy_CloudFormation_TD:
+  stage: CloudFormation_TD
+#Dependencies for Deploying on AWS
+  needs: [Create_JSON]
+  dependencies:
+    - Create_JSON
+  before_script:
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID_SANDBOX
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEYSANDBOX
+    - aws configure set region 	$AWS_REGION_SANDBOX
+  script:
+    - echo Perform action- $actioni on stack- $STACKNAME
+    - |
+      export actioni=$(echo ${TODOIT,,})
+      export conditioni=$(echo ${TODOIT^^})
+      echo $actioni $conditioni
+    - aws cloudformation $actioni-stack --stack-name $STACKNAME-TD --template-body file://output/$STACKNAME-taskdef.json
+#Verify stack status
+    - stack_status=$(aws cloudformation describe-stacks --stack-name $STACKNAME-TD --query 'Stacks[0].StackStatus' | cut -d\" -f2)
+    - echo $stack_status
+    - |
+       while [ "$stack_status" != "${conditioni}_COMPLETE" ]; do
+        echo "Stack is in $stack_status state. Waiting for stack to be created."
+        sleep 1
+        
+        aws cloudformation describe-stacks --stack-name $STACKNAME-TD --query 'Stacks[0].[StackStatus,StackStatusReason, CreationTime]' > stack.log
+        stack_status=$(cat stack.log | head -2 | tail -1 | cut -d\" -f2)
+        echo $stack_status
+        cat stack.log
+
+          if [ "$stack_status" = "ROLLBACK_COMPLETE" ]; then
+          exit 1
+          else
+          echo ----------
+          fi
+
+       done
+       echo "$stack_status"
+#  when: manual
+  only:
+    - main 
+    - dev 
+    - sit 

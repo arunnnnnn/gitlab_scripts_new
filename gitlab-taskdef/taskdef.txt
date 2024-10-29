@@ -1,0 +1,6 @@
+container_name=my-container
+image_name=nginx:latest
+Memory=512
+Container_port=80
+Host_port=80
+Family=Arun

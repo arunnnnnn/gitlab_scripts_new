@@ -1,0 +1,123 @@
+
+stages:
+  - convertinput
+#  - Zip_thefile
+  - upload_toS3
+
+
+inputcreation:
+  image: linux 
+  stage: convertinput
+  before_script:
+    - ls
+  script:
+    
+    - var=$(grep vpc_id taskdefenition.txt | cut -d\= -f2)
+    - var1=$(grep launch_type taskdefenition.txt | cut -d\= -f2)
+    - var2=$(grep taskDefinitionName taskdefenition.txt | cut -d\= -f2)
+    - var3=$(grep imageName taskdefenition.txt | cut -d\= -f2)
+    - var4=$(grep serviceName taskdefenition.txt | cut -d\= -f2)
+    - var5=$(grep containerPort taskdefenition.txt | cut -d\= -f2)
+    - var6=$(grep clusterName taskdefenition.txt | cut -d\= -f2)
+    - var7=$(grep softlimit taskdefenition.txt | cut -d\= -f2)
+    - var8=$(grep iam-role taskdefenition.txt  | cut -d\= -f2)
+    - var9=$(grep desire_count taskdefenition.txt | cut -d\= -f2)
+    - var10=$(grep Requires_Compatibilities taskdefenition.txt | cut -d\= -f2)
+
+    - envvar=$(grep APP_LOGGING taskdefenition.txt | cut -d\= -f1)
+    - envvar1=$(grep APP_LOGGING taskdefenition.txt | cut -d\= -f2)
+    - envvar2=$(grep CONTEXT_PATH_CRM taskdefenition.txt | cut -d\= -f1)
+    - envvar3=$(grep CONTEXT_PATH_CRM taskdefenition.txt | cut -d\= -f2)
+    - envvar4=$(grep EUREKA_ENABLED taskdefenition.txt | cut -d\= -f1)
+    - envvar5=$(grep EUREKA_ENABLED taskdefenition.txt | cut -d\= -f2)
+    - envvar6=$(grep WS_PWD taskdefenition.txt | cut -d\= -f1)
+    - envvar7=$(grep WS_PWD taskdefenition.txt | cut -d\= -f2)
+    - envvar8=$(grep WS_UNAME taskdefenition.txt | cut -d\= -f1)
+    - envvar9=$(grep WS_UNAME taskdefenition.txt | cut -d\= -f2)
+    - envvar10=$(grep WS_URL taskdefenition.txt | cut -d\= -f1)
+    - envvar11=$(grep WS_URL taskdefenition.txt | cut -d\= -f2)
+
+    
+
+
+    - echo $var, $var1, $var2, $var3, $var4, $var5, $var6, $var7, $var8, $var9
+
+    - sed -i "s|vpc-eww|$var|g" task.json
+    - sed -i "s|Type|$var1|g" task.json
+    - sed -i "s|taskname|$var2|g" task.json
+    - sed -i "s|imagename|$var3|g" task.json
+    - sed -i "s|Servicename|$var4|g" task.json
+    - sed -i "s|port|$var5|g" task.json
+    - sed -i "s|cname|$var6|g" task.json
+    - sed -i "s|Softlimit|$var7|g" task.json
+    - sed -i "s|Role|$var8|g" task.json
+    - sed -i "s|Count|$var9|g" task.json
+    - sed -i "s|method|$var10|g" task.json
+
+    - sed -i  "s|name1|$envvar|g" task.json
+    - sed -i  "s|value1|$envvar1|g" task.json
+    - sed -i  "s|name2|$envvar2|g" task.json
+    - sed -i  "s|value2|$envvar3|g" task.json
+    - sed -i  "s|name3|$envvar4|g" task.json
+    - sed -i  "s|value3|$envvar5|g" task.json
+    - sed -i  "s|name4|$envvar6|g" task.json
+    - sed -i  "s|value4|$envvar7|g" task.json
+    - sed -i  "s|name5|$envvar8|g" task.json
+    - sed -i  "s|value5|$envvar9|g" task.json
+    - sed -i  "s|name6|$envvar10|g" task.json
+    - sed -i  "s|value6|$envvar11|g" task.json
+
+
+    - cat task.json
+    - mkdir target/
+    - cp task.json target/ 
+    - cd target
+    - apt install zip
+    - zip  ecs_parameter task.json 
+    - ls
+  artifacts:
+    expire_in: 1 days
+    paths:
+    - target/*
+
+#zip_jsonfile:
+#  stage: Zip_thefile
+#  before_script:
+#    - cat target/task.json
+#    - apk add --update zip
+#  script:
+#    - cd target/
+     
+#  artifacts:
+#    paths:
+#      - ecs_parameter.zip
+#    when: on_success
+
+upload to s3:
+  stage: upload_toS3
+  image: 
+    name: amazon/aws-cli
+    entrypoint: [""]
+    
+  before_script:
+    - echo $AWS_ACCESS_KEY_ID_SANDBOX
+    - echo $AWS_SECRET_ACCESS_KEYSANDBOX
+    - echo $AWS_REGION_SANDBOX
+    - aws --version
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID_SANDBOX
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEYSANDBOX
+    - aws configure set region 	$AWS_REGION_SANDBOX
+     
+  script:
+    - cd target
+    - ls
+    #- aws ecr describe-repositories
+    #- export ecs_parametet.zip
+    - aws s3 ls
+    - aws s3 cp ecs_parameter.zip "s3://$S3_BUCKET1/ecs_parameter.zip"
+        
+
+  only:
+    - dev
+  
+  when: manual

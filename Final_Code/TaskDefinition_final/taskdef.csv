@@ -1,0 +1,13 @@
+﻿Container_Name,webmin1
+Image_Name,nginx:latest
+"Container_Memory,128",128
+Container_Port,80
+Host_Port,80
+Family_Name,seventeenrc1
+AccountNo,6.50869E+11
+TaskCPU,10
+TaskMEM,128
+Compatibility,EC2
+Status,create
+TaskRoleArn,ecsTaskExecutionRole
+Task_Execution_Role,ecsTaskExecutionRole

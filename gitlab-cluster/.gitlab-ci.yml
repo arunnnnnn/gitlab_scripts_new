@@ -1,0 +1,46 @@
+stages:
+     - create_input
+     - create-cluster
+
+create_input:
+  stage: create_input
+  before_script:
+    - ls
+  script:
+
+    - var=$(grep clustername cluster.txt | cut -d\= -f2)
+    
+
+    - echo $var
+
+
+    - sed -i "s|my-cluster-name|$var|g" cluster.json
+    
+    - cat cluster.json
+
+    - mkdir target/
+    - cp cluster.json target/ 
+    - cd target
+    - ls
+
+  artifacts:
+    expire_in: 1 days
+    paths:
+    - target/*
+
+
+createTD:
+  stage: create-cluster
+  before_script:
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID_SANDBOX
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEYSANDBOX
+    - aws configure set region 	$AWS_REGION_SANDBOX
+
+  script:
+    - cd target
+    - ls
+    - cat cluster.json
+    - aws cloudformation create-stack --stack-name my-cluster-stack --template-body file://cluster.json
+
+  when: manual  
+

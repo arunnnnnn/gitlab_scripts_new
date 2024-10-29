@@ -1,0 +1,44 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "MyTaskDefinition": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Name": "last",
+            "Image": "httpd",
+            "Memory": "256",
+            "Environment": [
+              {
+                "Name": "name1",
+                "Value": "value1"
+              },
+              {
+                "Name": "name2",
+                "Value": "value2"
+              },
+              {
+                "Name": "name3",
+                "Value": "value3"
+              }
+            ],
+            "PortMappings": [
+              {
+                "ContainerPort": "8080",
+                "HostPort": "3128"
+              }
+            ]
+          }
+        ],
+        "taskRoleArn":"arn:aws:iam::650869055350:role/ecsTaskExecutionRole",
+        "requiresCompatibilities":["EC2"],
+        "cpu":"256",
+        "memory":"512",
+        "Family": "text",
+        "ExecutionRoleArn": "arn:aws:iam::650869055350:role/ecsTaskExecutionRole"
+      }
+    }
+  }
+}
+

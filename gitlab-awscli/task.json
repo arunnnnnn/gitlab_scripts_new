@@ -1,0 +1,87 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters": {
+        "environmentfile": {
+            "Description": "Environment file location",
+            "Type": "String",
+            "Default": "s3_uri"
+        },
+        "image": {
+            "Type": "String",
+            "Default": "image_uri"
+        },
+        "servicename": {
+            "Type": "String",
+            "Default": "service_name"
+        },
+        "taskdefinitionname": {
+            "Type": "String",
+            "Default": "taskdefinition_name"
+        },
+        "port": {
+            "Type": "String",
+            "Default": 1111
+        },        
+        "iamrole": {
+            "Type": "String",
+            "Default": "iam_role"
+        },      
+        "Region": {
+            "Type": "String",
+            "Default": "aws_region"
+        },
+        "softlimit": {
+            "Type": "String",
+            "Default": 128
+        },      
+        "RequiresCompatibilities":{
+            "Type": "String",
+            "Default": "Requires_Compatibilities"
+        }
+    },
+    "Resources": {
+        "TaskDefinition": {
+            "Type": "AWS::ECS::TaskDefinition",
+            "Properties": {
+                "RequiresCompatibilities": [{"Ref":"RequiresCompatibilities"}],
+                "ContainerDefinitions": [
+                    {
+                    "EnvironmentFiles": [{
+                        "Value": {
+                            "Ref": "environmentfile"
+                        },
+                        "Type":"s3"
+                    }],
+                    "Essential": true,
+                    "Image": {
+                        "Ref": "image"
+                    },
+                    "LogConfiguration": {
+                        "LogDriver": "awslogs",
+                        "Options": {
+                            "awslogs-group": { "Fn::Join": [ "-", ["/ecs/", { "Ref": "servicename" } ] ] },
+                            "awslogs-region": {"Ref": "Region"},
+                            "awslogs-create-group": "true",
+                            "awslogs-stream-prefix": "ecs"
+                        }
+                    },
+                    "Name": {
+                        "Ref": "servicename"
+                    },
+                    "MemoryReservation": { "Ref":"softlimit"},
+                    "PortMappings": [
+                        {
+                        "ContainerPort": {
+                            "Ref": "port"
+                        },
+                        "Protocol": "tcp"
+                    }],
+                    "Privileged": false
+                }],
+                "ExecutionRoleArn": {"Ref":"iamrole"},                  
+                "Family": { "Ref": "taskdefinitionname" }, 
+                "TaskRoleArn":{"Ref":"iamrole"}
+            }
+        }
+    }
+}

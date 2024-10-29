@@ -1,0 +1,73 @@
+Resources:
+  # Define the task definition
+  MyTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      # Replace these values with your own
+      ContainerDefinitions:
+        - Name: my-container
+          Image: 1234567890.dkr.ecr.us-east-1.amazonaws.com/my-image:latest
+          Memory: 512
+          CPU: 256
+          PortMappings:
+            - ContainerPort: 80
+              HostPort: 80
+          Essential: true
+      NetworkMode: awsvpc
+      ExecutionRoleArn: arn:aws:iam::1234567890:role/ecsTaskExecutionRole
+      Family: my-task-definition
+
+  # Define the service
+  MyService:
+    Type: AWS::ECS::Service
+    Properties:
+      # Replace these values with your own
+      Cluster: my-cluster
+      ServiceName: my-service
+      TaskDefinition: !Ref MyTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          SecurityGroups:
+            - sg-12345678
+          Subnets:
+            - subnet-12345678
+
+
+
+...
+
+Push your CloudFormation template to a Git repository hosted on GitLab, such as a project repository or a personal repository.
+
+Create a new pipeline in your GitLab project by going to the "CI/CD" section and clicking on "Pipelines."
+
+In the pipeline configuration file (e.g., .gitlab-ci.yml), define a job that calls the aws cloudformation command to create or update a stack using your CloudFormation template. You can do this by using the aws cloudformation create-stack or aws cloudformation update-stack command, depending on your needs.
+
+In the pipeline configuration, you will need to specify the AWS region and stack name, as well as the location of your CloudFormation template in the Git repository. You may also want to set environment variables to specify the AWS access key and secret key that will be used to authenticate the aws command.
+
+Run the pipeline to execute the job and create or update the CloudFormation stack.
+
+
+.....
+
+Running-Cloudformation:
+  stage: Running_CloudFormation
+  image: 
+    name: amazon/aws-cli
+    entrypoint: [""]
+    
+  before_script:
+    - echo $AWS_ACCESS_KEY_ID_SANDBOX
+    - echo $AWS_SECRET_ACCESS_KEYSANDBOX
+    - echo $AWS_REGION_SANDBOX
+    - aws --version
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID_SANDBOX
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEYSANDBOX
+    - aws configure set region 	$AWS_REGION_SANDBOX
+
+script:
+  
+    - aws cloudformation create-stack --stack-name my-stack --template-url https://example.com/template.yml --region $AWS_REGION_SANDBOX
+
+

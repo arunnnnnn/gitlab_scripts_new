@@ -1,0 +1,33 @@
+Resources:
+  MyECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: my-ecs-cluster
+
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0d03b1ad793d7ac93
+      InstanceType: t2.micro
+      KeyName: ecs-agent
+      SecurityGroupIds:
+        - sg-0ddbe364727bc3050
+      SubnetId: subnet-0f13dcd71bcf41ff1
+      IamInstanceProfile: ecsInstanceRole
+      UserData:
+        'Fn::Base64': !Sub |
+          #!/bin/bash
+          yum -y update
+          yum -y install net-tools wget telnet yum-utils device-mapper-persistent-data lvm2
+          yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo -y
+          yum -y update && yum -y  install docker-ce
+          systemctl daemon-reload
+          systemctl start docker
+          systemctl enable docker
+          systemctl restart docker
+          curl -O https://s3.us-east-2.amazonaws.com/amazon-ecs-agent-us-east-2/amazon-ecs-init-latest.x86_64.rpm
+          yum localinstall -y amazon-ecs-init-latest.x86_64.rpm
+          echo ECS_CLUSTER=my-ecs-cluster >> /etc/ecs/ecs.config
+          systemctl enable ecs
+          systemctl start ecs
+

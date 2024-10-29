@@ -1,0 +1,54 @@
+stages:
+     - create_input
+     - create-taskdefinition
+
+create_input:
+  stage: create_input
+  before_script:
+    - ls
+  script:
+
+    - var=$(grep container_name taskdef.txt | cut -d\= -f2)
+    - var1=$(grep image_name taskdef.txt | cut -d\= -f2)
+    - var2=$(grep Memory taskdef.txt | cut -d\= -f2)
+    - var3=$(grep Container_port taskdef.txt | cut -d\= -f2)
+    - var4=$(grep Host_port taskdef.txt | cut -d\= -f2)
+    - var5=$(grep Family taskdef.txt | cut -d\= -f2)
+
+    - echo $var, $var1, $var2, $var3, $var4, $var5
+
+
+    - sed -i "s|Container_Name|$var|g" taskdef.json
+    - sed -i "s|Container_image|$var1|g" taskdef.json
+    - sed -i "s|contrainer_memory|$var2|g" taskdef.json
+    - sed -i "s|container_value|$var3|g" taskdef.json
+    - sed -i "s|hostport_value|$var4|g" taskdef.json
+    - sed -i "s|name_Family|$var5|g" taskdef.json
+
+    - cat taskdef.json
+
+    - mkdir target/
+    - cp taskdef.json target/ 
+    - cd target
+    - ls
+
+  artifacts:
+    expire_in: 1 days
+    paths:
+    - target/*
+
+
+createTD:
+  stage: create-taskdefinition
+  before_script:
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID_SANDBOX
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEYSANDBOX
+    - aws configure set region 	$AWS_REGION_SANDBOX
+
+  script:
+    - cd target
+    - ls
+    - cat taskdef.json
+    - aws cloudformation create-stack --stack-name my-task-definition-stack --template-body file://taskdef.json
+
+  when: manual  

@@ -1,0 +1,8 @@
+serviceName=Clim-demo
+Cluster=arun
+Desired_Count=1
+Launch_Type=EC2
+TaskDefinition=Arun
+MaximumPercent=200
+MinimumPercent=100
+Scheduling_Strategy=REPLICA

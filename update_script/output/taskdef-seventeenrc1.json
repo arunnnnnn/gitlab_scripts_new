@@ -1,0 +1,44 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "MyTaskDefinition": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Name": "webmin1",
+            "Image": "nginx:latest",
+            "Memory": "128",
+            "Environment": [
+              {
+                "Name": "name1",
+                "Value": "value1"
+              },
+              {
+                "Name": "name2",
+                "Value": "value2"
+              },
+              {
+                "Name": "name3",
+                "Value": "value3"
+              }
+            ],
+            "PortMappings": [
+              {
+                "ContainerPort": "80",
+                "HostPort": "80"
+              }
+            ]
+          }
+        ],
+        "taskRoleArn":"arn:aws:iam::650869055350:role/ecsTaskExecutionRole",
+        "requiresCompatibilities":["EC2"],
+        "cpu":"256",
+        "memory":"512",
+        "Family": "seventeenrc1",
+        "ExecutionRoleArn": "arn:aws:iam::650869055350:role/ecsTaskExecutionRole"
+      }
+    }
+  }
+}
+

@@ -1,0 +1,69 @@
+version: 0.2
+env:
+  variables:
+      ecs_region: "us-east-1"
+      cluster_name: "ECSSANDBOXAPI01"
+      loadbalancer_name: "ALB-SANDBOX-01"
+      vpc_id: "vpc-03455b6a9e286c006"
+      service_name: "demo-service"
+phases:  
+  pre_build:
+     commands:
+     - |       
+       aws s3 cp s3://demomdst/"${service_name}"/*.json .
+       chmod +x taskdefinition.json
+       container_name=$(cat taskdefinition.json | jq -r '.containerDefinitions[].name')
+       port=$(cat taskdefinition.json | jq -r '.containerDefinitions[].portMappings[].containerPort')
+       target_group_name="TGP-$service_name"
+       ecs_task_definition_name="$service_name-task"
+       echo $service_name-service
+       echo $target_group_name
+       echo $ecs_task_definition_name
+       echo $container_name
+       echo $port      
+       target_group_arn="$(aws elbv2 describe-target-groups --name $target_group_name --query TargetGroups[*].TargetGroupArn --output text)"
+       service_arn="$(aws ecs describe-services --service $service_name --cluster $cluster_name --query services[*].serviceArn --output text)"
+       loadbalancer_arn="$(aws elbv2 describe-load-balancers --names $loadbalancer_name --query LoadBalancers[*].LoadBalancerArn --output text)"
+  build:
+    commands:    
+       - echo Create task-definition
+       - |
+         aws s3 cp $s3_location .
+         aws ecs register-task-definition --cli-input-json file://taskdefinition.json
+         sleep 60
+         task_definition="$(aws ecs describe-task-definition --region $ecs_region --task-definition $ecs_task_definition_name --query taskDefinition.taskDefinitionArn --output text)"
+         echo $task_definition
+       - echo  Create targetgroup     
+       - |
+         if [ -z "${target_group_arn}" ]; then 
+           echo "target group not available" 1>&2;
+           aws elbv2 create-target-group --name "${target_group_name}" --protocol HTTP --port 80 --target-type instance --vpc-id "${vpc_id}"
+           sleep 60
+           target_group_arn="$(aws elbv2 describe-target-groups --name $target_group_name --query TargetGroups[*].TargetGroupArn --output text)"
+           aws elbv2 create-listener --load-balancer-arn "${loadbalancer_arn}" --protocol HTTP --port "${port}" --default-actions Type=forward,TargetGroupArn="${target_group_arn}" || exit 1
+           sleep 60
+           echo "${target_group_arn}"
+         else
+           echo "target group is available"
+           echo "${target_group_arn}"
+         fi
+       - echo Create service   
+       - |       
+         if [ -z "${service_arn}" ]; then
+           echo "service is not available" 1>&2;
+           aws ecs create-service --cluster "${cluster_name}" --service-name "${service_name}" --task-definition "${task_definition}" --load-balancers targetGroupArn="${target_group_arn}",containerName="${container_name}",containerPort="${port}" --desired-count 2 --launch-type EC2 --health-check-grace-period-seconds "300" || exit 1
+           sleep 60
+           service_arn="$(aws ecs describe-services --service $service_name --cluster $cluster_name --query services[*].serviceArn --output text)"
+          else
+           echo "service is available"
+           echo "${service_arn}"
+         fi
+       - cat imageDetail.json
+       - ImageURI=$(cat imageDetail.json | jq -r '.ImageURI')
+       - printf '[{"name":"CONTAINER_NAME","imageUri":"IMAGE_URI"}]' > imagedefinitions.json
+       - sed -i -e "s|CONTAINER_NAME|$container_name|g" imagedefinitions.json
+       - sed -i -e "s|IMAGE_URI|$ImageURI|g" imagedefinitions.json
+       - cat imagedefinitions.json
+artifacts:
+    files:
+       - imagedefinitions.json

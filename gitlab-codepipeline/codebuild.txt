@@ -1,0 +1,23 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "MyCodeBuildProject": {
+      "Type": "AWS::CodeBuild::Project",
+      "Properties": {
+        "Name": "MyCodeBuildProject",
+        "Source": {
+          "Type": "CODEPIPELINE"
+        },
+        "Artifacts": {
+          "Type": "CODEPIPELINE"
+        },
+        "Environment": {
+          "Type": "LINUX_CONTAINER",
+          "Image": "aws/codebuild/standard:4.0",
+          "ComputeType": "BUILD_GENERAL1_SMALL"
+        },
+        "ServiceRole": { "Fn::ImportValue": "MyCodeBuildServiceRole" }
+      }
+    }
+  }
+}

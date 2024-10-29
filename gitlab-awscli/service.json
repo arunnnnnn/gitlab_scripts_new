@@ -1,0 +1,86 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters": {
+        "servicename": {
+        "Type": "String",
+        "Default": "service_name"
+        },
+        "port": {
+            "Type": "String",
+            "Default": "container_port"
+        },
+        "clustername": {
+            "Type": "String",
+            "Default": "cluster_name"
+        },      
+        "loadbalancer": {
+            "Type": "String",
+            "Default": "lb_arn"
+        },
+        "vpcid": {
+            "Type": "String",
+            "Default": "vpc_id"
+        },      
+        "desirecount": {
+            "Type": "String",
+            "Default": "desire_count"
+        },
+        "launchtype":{
+            "Type": "String",
+            "Default": "launch_type"
+        },
+        "taskarn":{
+            "Type": "String",
+            "Default": "task_arn"
+        }
+    },
+    "Resources": {      
+    "LoadBalancerListener": {
+        "Type": "AWS::ElasticLoadBalancingV2::Listener",        
+        "Properties": {
+          "DefaultActions": [{
+            "Type": "forward",
+            "TargetGroupArn": { "Ref": "TargetGroup" }
+          }],
+          "LoadBalancerArn": {"Ref": "loadbalancer"},
+          "Port": { "Ref": "port" },
+          "Protocol": "HTTP"
+        }
+      },
+      "TargetGroup": {
+        "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+        "Properties": {
+          "Name": { "Fn::Join": [ "-", [ "TGP", { "Ref": "servicename" }  ] ] },
+          "Port": 80,
+          "Protocol": "HTTP",
+          "VpcId": {"Ref": "vpcid"}
+        }        
+      },
+    "ECSService": {
+        "Type": "AWS::ECS::Service",
+        "DependsOn": ["LoadBalancerListener"],
+        "Properties": {
+            "Cluster": {"Ref":"clustername"},
+            "ServiceName":{"Ref": "servicename"
+              },
+            "HealthCheckGracePeriodSeconds": 300,
+            "LoadBalancers": [{
+                "ContainerName": {
+                    "Ref": "servicename"
+                },
+                "ContainerPort":  {
+                    "Ref": "port"
+                },              
+                "TargetGroupArn":  {
+                    "Ref": "TargetGroup"
+                }
+            }],
+            "DesiredCount": {"Ref":"desirecount"},
+            "LaunchType": {"Ref":"launchtype"},
+            "TaskDefinition": {
+                "Ref": "taskarn"
+            }
+        }
+    }
+}
+}

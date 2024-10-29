@@ -1,0 +1,8 @@
+Container_Name,Image_Name,Container_Memory,Container_Port,Host_Port,Family_Name,AccountNo,TaskCPU,TaskMEM,Compatibility,TaskRoleArn,Task_Execution_Role
+first,nginx:latest,128,80,80,seventeenrc1,650869055350,10,128,EC2,ecsTaskExecutionRole,ecsTaskExecutionRole
+panel,httpd,256,8080,3128,text,650869055350,20,256,EC2,ecsTaskExecutionRole,ecsTaskExecutionRole
+webmin1,nginx:latest,128,80,80,seventeenrc1,650869055350,10,128,EC2,ecsTaskExecutionRole,ecsTaskExecutionRole
+panel,httpd,256,8080,3128,text,650869055350,20,256,EC2,ecsTaskExecutionRole,ecsTaskExecutionRole
+webmin1,nginx:latest,128,80,80,seventeenrc1,650869055350,10,128,EC2,ecsTaskExecutionRole,ecsTaskExecutionRole
+webmin1,nginx:latest,128,80,80,seventeenrc1,650869055350,10,128,EC2,ecsTaskExecutionRole,ecsTaskExecutionRole
+last,httpd,256,8080,3128,text,650869055350,20,256,EC2,ecsTaskExecutionRole,ecsTaskExecutionRole

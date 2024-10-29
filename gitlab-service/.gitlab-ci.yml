@@ -1,0 +1,63 @@
+stages:
+  
+  - create_input  
+  - create-service
+
+create_input:
+  stage: create_input
+  before_script:
+    - ls
+  script:
+
+    - var=$(grep serviceName service.txt | cut -d\= -f2)
+    - var1=$(grep Cluster service.txt | cut -d\= -f2)
+    - var2=$(grep Desired_Count service.txt | cut -d\= -f2)
+    - var3=$(grep Launch_Type service.txt | cut -d\= -f2)
+    - var4=$(grep TaskDefinition service.txt | cut -d\= -f2)
+    - var5=$(grep MaximumPercent service.txt | cut -d\= -f2)
+    - var6=$(grep MinimumPercent service.txt | cut -d\= -f2)
+    - var7=$(grep Scheduling_Strategy service.txt | cut -d\= -f2)
+
+    - echo $var, $var1, $var2, $var3, $var4, $var5, $var6, $var7
+
+
+    - sed -i "s|My_service|$var|g" service.json
+    - sed -i "s|Cluste_name|$var1|g" service.json
+    - sed -i "s|Count_Desired|$var2|g" service.json
+    - sed -i "s|Type_Launch|$var3|g" service.json
+    - sed -i "s|taskdef_name|$var4|g" service.json
+    - sed -i "s|max_Percent|$var5|g" service.json
+    - sed -i "s|min_Percent|$var6|g" service.json
+    - sed -i "s|Startergy|$var7|g" service.json
+
+
+    - cat service.json
+
+    - mkdir target/
+    - cp service.json target/ 
+    - cd target
+    - ls
+
+  artifacts:
+    expire_in: 1 days
+    paths:
+    - target/*
+  
+
+
+create_service:
+  stage: create-service
+  before_script:
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID_SANDBOX
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEYSANDBOX
+    - aws configure set region 	$AWS_REGION_SANDBOX
+
+  script:
+    - cd target
+    - ls
+    - cat service.json
+
+    - aws cloudformation create-stack --stack-name my-service-stack1 --template-body file://service.json
+
+  when: manual
+

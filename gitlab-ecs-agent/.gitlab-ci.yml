@@ -1,0 +1,16 @@
+
+stages:
+    - create-agent
+
+create_agent:
+  stage: create-agent
+  before_script:
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID_SANDBOX
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEYSANDBOX
+    - aws configure set region 	$AWS_REGION_SANDBOX
+
+  script:
+    
+    - aws cloudformation create-stack --stack-name my-cluster-stack1 --template-body file://template.yml
+
+  when: manual  
